@@ -111,11 +111,5 @@ post_provision_config_nodes() {
         exit "$rc"
     fi
 
-    # now make sure everything is fully up-to-date
-    if ! time dnf -y upgrade \
-                  --exclude fuse,fuse-libs,fuse-devel,mercury,daos,daos-\*; then
-        exit 1
-    fi
-
     exit 0
 }

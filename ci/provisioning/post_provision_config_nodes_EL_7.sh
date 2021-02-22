@@ -146,12 +146,5 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-Debug-7
 enabled=0
 EOF
 
-    # now make sure everything is fully up-to-date
-    if ! time dnf -y upgrade \
-                  --exclude fuse,mercury,daos,daos-\*; then
-        dump_repos
-        exit 1
-    fi
-
     exit 0
 }
