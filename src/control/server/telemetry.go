@@ -33,18 +33,9 @@ func regPromEngineSources(ctx context.Context, log logging.Logger, ioEngineCount
 		sources[i] = es
 	}
 
-	// https://prometheus.io/docs/instrumenting/writing_exporters/#drop-less-useful-statistics
-	//
-	// Per the advice given at the above link, we're going to try avoid exporting these stats
-	// to Prometheus. We may want to revisit that if we find that Prometheus does not give us
-	// the resolution we need.
 	opts := &promexp.CollectorOpts{
 		Ignores: []string{
 			`.*_ID_(\d+)_rank`,
-			`.*_min$`,
-			`.*_max$`,
-			`.*_mean$`,
-			`.*_stddev$`,
 		},
 	}
 	c, err := promexp.NewCollector(log, opts, sources...)

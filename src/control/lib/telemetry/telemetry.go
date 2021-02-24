@@ -14,7 +14,7 @@ package telemetry
 #include "gurt/telemetry_common.h"
 #include "gurt/telemetry_consumer.h"
 
-static int
+static uint64_t
 get_min_int(struct d_tm_stats_t *stats)
 {
 	return stats->dtm_min.min_int;
@@ -26,7 +26,7 @@ get_min_float(struct d_tm_stats_t *stats)
 	return stats->dtm_min.min_float;
 }
 
-static int
+static uint64_t
 get_max_int(struct d_tm_stats_t *stats)
 {
 	return stats->dtm_max.max_int;
@@ -38,7 +38,7 @@ get_max_float(struct d_tm_stats_t *stats)
 	return stats->dtm_max.max_float;
 }
 
-static int
+static uint64_t
 get_sum_int(struct d_tm_stats_t *stats)
 {
 	return stats->dtm_sum.sum_int;
@@ -58,6 +58,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"unsafe"
 
 	"github.com/pkg/errors"
@@ -85,21 +86,19 @@ type (
 		String() string
 	}
 
-	MetricStats interface {
-		FloatLow() float64
-		FloatHigh() float64
+	StatsMetric interface {
+		Metric
+		FloatMin() float64
+		FloatMax() float64
 		FloatSum() float64
 		Mean() float64
 		StdDev() float64
-	}
-
-	StatsMetric interface {
-		MetricStats
 	}
 )
 
 type (
 	handle struct {
+		sync.RWMutex
 		idx   uint32
 		rank  *uint32
 		shmem *C.uint64_t
@@ -370,6 +369,9 @@ func GetRank(ctx context.Context) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	hdl.Lock()
+	defer hdl.Unlock()
 
 	if hdl.rank == nil {
 		g, err := GetGauge(ctx, "/rank")

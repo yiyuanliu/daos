@@ -25,6 +25,12 @@ set_gauge(struct d_tm_node_t **metric, uint64_t value, char *item)
 {
 	return d_tm_set_gauge(metric, value, item, NULL);
 }
+
+static int
+incr_counter(struct d_tm_node_t **metric, char *item)
+{
+	return d_tm_increment_counter(metric, item, NULL);
+}
 */
 import "C"
 
@@ -33,8 +39,8 @@ type (
 		name   string
 		short  string
 		long   string
-		lo     float64
-		hi     float64
+		min    float64
+		max    float64
 		cur    float64
 		sum    float64
 		mean   float64
@@ -49,32 +55,39 @@ type (
 	testMetricsMap map[MetricType]testMetric
 )
 
-var testMetrics testMetricsMap
-
-func setupTestMetrics(t *testing.T) context.Context {
-	rc := C.d_tm_init(0, 8192, 0)
+func setupTestMetrics(t *testing.T) (context.Context, testMetricsMap) {
+	rc := C.d_tm_init(42, 8192, 0)
 	if rc != 0 {
 		t.Fatalf("failed to init telemetry: %d", rc)
 	}
 
-	ctx, err := Init(context.Background(), 0)
+	ctx, err := Init(context.Background(), 42)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	testMetrics = testMetricsMap{
+	testMetrics := testMetricsMap{
 		MetricTypeGauge: {
 			c: cMetric{
 				name:   "test_gauge",
 				short:  "short gauge",
 				long:   "long gauge",
-				lo:     1,
+				min:    1,
 				cur:    42,
-				hi:     64,
+				max:    64,
 				sum:    107,
 				mean:   35.666666666666664,
 				stddev: 31.973947728319903,
 				str:    "Gauge: test_gauge = 42 min: 1 max: 64 mean: 35.666667 size: 3 std dev: 31.973948",
+			},
+		},
+		MetricTypeCounter: {
+			c: cMetric{
+				name:  "test_counter",
+				short: "short counter",
+				long:  "long counter",
+				cur:   1,
+				str:   "Counter: test_counter = 1",
 			},
 		},
 	}
@@ -86,18 +99,27 @@ func setupTestMetrics(t *testing.T) context.Context {
 			if rc != 0 {
 				t.Fatalf("failed to add %s: %d", mv.c.name, rc)
 			}
-			for _, val := range []float64{mv.c.lo, mv.c.hi, mv.c.cur} {
+			for _, val := range []float64{mv.c.min, mv.c.max, mv.c.cur} {
 				rc = C.set_gauge(&mv.c.node, C.uint64_t(val), nil)
 				if rc != 0 {
 					t.Fatalf("failed to set %s: %d", mv.c.name, rc)
 				}
+			}
+		case MetricTypeCounter:
+			rc = C.d_tm_add_metric(&mv.c.node, C.CString(mv.c.name), C.D_TM_COUNTER, C.CString(mv.c.short), C.CString(mv.c.long))
+			if rc != 0 {
+				t.Fatalf("failed to add %s: %d", mv.c.name, rc)
+			}
+			rc = C.incr_counter(&mv.c.node, nil)
+			if rc != 0 {
+				t.Fatalf("failed to set %s: %d", mv.c.name, rc)
 			}
 		default:
 			t.Fatalf("metric type %d not supported", mt)
 		}
 	}
 
-	return ctx
+	return ctx, testMetrics
 }
 
 func cleanupTestMetrics(t *testing.T) {

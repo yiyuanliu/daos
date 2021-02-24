@@ -32,11 +32,11 @@ func (g *Gauge) FloatValue() float64 {
 	return float64(g.Value())
 }
 
-func (g *Gauge) FloatLow() float64 {
+func (g *Gauge) FloatMin() float64 {
 	return float64(getStatsMinInt(&g.stats))
 }
 
-func (g *Gauge) FloatHigh() float64 {
+func (g *Gauge) FloatMax() float64 {
 	return float64(getStatsMaxInt(&g.stats))
 }
 

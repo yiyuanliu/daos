@@ -13,11 +13,27 @@ import (
 )
 
 func TestTelemetry_Basics(t *testing.T) {
-	ctx := setupTestMetrics(t)
+	ctx, testMetrics := setupTestMetrics(t)
 	defer cleanupTestMetrics(t)
 
 	var m Metric
 	var err error
+
+	runTests := func(t *testing.T, mv *testMetric, m Metric) {
+		common.AssertEqual(t, mv.c.name, m.Name(), "Name() failed")
+		common.AssertEqual(t, mv.c.short, m.ShortDesc(), "ShortDesc() failed")
+		common.AssertEqual(t, mv.c.long, m.LongDesc(), "LongDesc() failed")
+		common.AssertEqual(t, mv.c.cur, m.FloatValue(), "FloatValue() failed")
+		common.AssertEqual(t, mv.c.str, m.String(), "String() failed")
+
+		if sm, ok := m.(StatsMetric); ok {
+			common.AssertEqual(t, mv.c.min, sm.FloatMin(), "FloatMin() failed")
+			common.AssertEqual(t, mv.c.max, sm.FloatMax(), "FloatMax() failed")
+			common.AssertEqual(t, mv.c.sum, sm.FloatSum(), "FloatSum() failed")
+			common.AssertEqual(t, mv.c.mean, sm.Mean(), "Mean() failed")
+			common.AssertEqual(t, mv.c.stddev, sm.StdDev(), "StdDev() failed")
+		}
+	}
 
 	for mt, mv := range testMetrics {
 		switch mt {
@@ -27,19 +43,14 @@ func TestTelemetry_Basics(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			common.AssertEqual(t, mv.c.name, m.Name(), "Name() failed")
-			common.AssertEqual(t, mv.c.short, m.ShortDesc(), "ShortDesc() failed")
-			common.AssertEqual(t, mv.c.long, m.LongDesc(), "LongDesc() failed")
-			common.AssertEqual(t, mv.c.cur, m.FloatValue(), "FloatValue() failed")
-			common.AssertEqual(t, mv.c.str, m.String(), "String() failed")
-
-			if sm, ok := m.(StatsMetric); ok {
-				common.AssertEqual(t, mv.c.lo, sm.FloatLow(), "FloatLow() failed")
-				common.AssertEqual(t, mv.c.hi, sm.FloatHigh(), "FloatHigh() failed")
-				common.AssertEqual(t, mv.c.sum, sm.FloatSum(), "FloatSum() failed")
-				common.AssertEqual(t, mv.c.mean, sm.Mean(), "Mean() failed")
-				common.AssertEqual(t, mv.c.stddev, sm.StdDev(), "StdDev() failed")
+			runTests(t, &mv, m)
+		case MetricTypeCounter:
+			m, err = GetCounter(ctx, mv.c.name)
+			if err != nil {
+				t.Fatal(err)
 			}
+
+			runTests(t, &mv, m)
 		default:
 			t.Fatalf("%d not tested", mt)
 		}

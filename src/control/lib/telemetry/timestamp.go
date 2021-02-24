@@ -22,22 +22,31 @@ import (
 )
 
 type Timestamp struct {
-	handle *handle
-	node   *C.struct_d_tm_node_t
-	Name   string
+	metricBase
 }
 
 func (t *Timestamp) Value() time.Time {
 	zero := time.Time{}
-	if t.handle == nil && t.node == nil {
+	if t.handle == nil {
 		return zero
 	}
 	var clk C.time_t
-	res := C.d_tm_get_timestamp(&clk, t.handle.shmem, t.node, C.CString(t.Name))
+	res := C.d_tm_get_timestamp(&clk, t.handle.shmem, t.node, C.CString(t.Name()))
 	if res == C.D_TM_SUCCESS {
 		return time.Unix(int64(clk), 0)
 	}
 	return zero
+}
+
+func newTimestamp(hdl *handle, path string, name *string, node *C.struct_d_tm_node_t) *Timestamp {
+	return &Timestamp{
+		metricBase: metricBase{
+			handle: hdl,
+			path:   path,
+			name:   name,
+			node:   node,
+		},
+	}
 }
 
 func GetTimestamp(ctx context.Context, name string) (*Timestamp, error) {
@@ -46,12 +55,10 @@ func GetTimestamp(ctx context.Context, name string) (*Timestamp, error) {
 		return nil, err
 	}
 
-	return &Timestamp{
-		handle: hdl,
-		Name:   name,
-	}, nil
-}
+	node, err := findNode(hdl, name)
+	if err != nil {
+		return nil, err
+	}
 
-func PrintTimestamp(clk *C.time_t, name string, stream *C.FILE) {
-	C.d_tm_print_timestamp(clk, C.CString(name), stream)
+	return newTimestamp(hdl, "", &name, node), nil
 }

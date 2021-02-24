@@ -170,6 +170,83 @@ func (lm labelMap) keys() (keys []string) {
 	return
 }
 
+type gvMap map[string]*prometheus.GaugeVec
+
+func (m gvMap) add(name, help string, value float64, labels labelMap) {
+	var gv *prometheus.GaugeVec
+	var found bool
+
+	gv, found = m[name]
+	if !found {
+		gv = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: name,
+			Help: help,
+		}, labels.keys())
+		m[name] = gv
+	}
+	gv.With(prometheus.Labels(labels)).Set(value)
+}
+
+type cvMap map[string]*prometheus.CounterVec
+
+func (m cvMap) add(name, help string, value float64, labels labelMap) {
+	var cv *prometheus.CounterVec
+	var found bool
+
+	cv, found = m[name]
+	if !found {
+		cv = prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		}, labels.keys())
+		m[name] = cv
+	}
+	cv.With(prometheus.Labels(labels)).Add(value)
+}
+
+type metricStat struct {
+	name  string
+	desc  string
+	value float64
+}
+
+func getMetricStats(baseName, shortDesc string, m telemetry.Metric) (stats []*metricStat) {
+	ms, ok := m.(telemetry.StatsMetric)
+	if !ok {
+		return
+	}
+
+	for name, s := range map[string]struct {
+		fn   func() float64
+		desc string
+	}{
+		"min": {
+			fn:   ms.FloatMin,
+			desc: " (min value)",
+		},
+		"max": {
+			fn:   ms.FloatMax,
+			desc: " (max value)",
+		},
+		"mean": {
+			fn:   ms.Mean,
+			desc: " (mean)",
+		},
+		"stddev": {
+			fn:   ms.Mean,
+			desc: " (std dev)",
+		},
+	} {
+		stats = append(stats, &metricStat{
+			name:  baseName + "_" + name,
+			desc:  shortDesc + s.desc,
+			value: s.fn(),
+		})
+	}
+
+	return
+}
+
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	rankMetrics := make(chan *rankMetric)
 	go func(sources []*EngineSource) {
@@ -179,8 +256,8 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		close(rankMetrics)
 	}(c.sources)
 
-	gauges := make(map[string]*prometheus.GaugeVec)
-	counters := make(map[string]*prometheus.CounterVec)
+	gauges := make(gvMap)
+	counters := make(cvMap)
 
 	startedAt := time.Now()
 	for rm := range rankMetrics {
@@ -192,38 +269,22 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 		baseName := prometheus.BuildFQName("engine", path, rm.m.Name())
 		shortDesc := rm.m.ShortDesc()
 
-		var found bool
 		switch rm.m.Type() {
 		case telemetry.MetricTypeGauge:
 			if c.isIgnored(baseName) {
 				continue
 			}
-			var gv *prometheus.GaugeVec
-			gv, found = gauges[baseName]
-			if !found {
-				gv = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-					Name: baseName,
-					Help: shortDesc,
-				}, labels.keys())
-				gauges[baseName] = gv
+
+			gauges.add(baseName, shortDesc, rm.m.FloatValue(), labels)
+			for _, ms := range getMetricStats(baseName, shortDesc, rm.m) {
+				gauges.add(ms.name, ms.desc, ms.value, labels)
 			}
-			g := gv.With(prometheus.Labels(labels))
-			g.Set(rm.m.FloatValue())
 		case telemetry.MetricTypeCounter:
 			if c.isIgnored(baseName) {
 				break
 			}
-			var cv *prometheus.CounterVec
-			cv, found = counters[baseName]
-			if !found {
-				cv = prometheus.NewCounterVec(prometheus.CounterOpts{
-					Name: baseName,
-					Help: shortDesc,
-				}, labels.keys())
-				counters[baseName] = cv
-			}
-			c := cv.With(prometheus.Labels(labels))
-			c.Add(rm.m.FloatValue())
+
+			counters.add(baseName, shortDesc, rm.m.FloatValue(), labels)
 		default:
 			c.log.Errorf("metric type %d not supported", rm.m.Type())
 		}

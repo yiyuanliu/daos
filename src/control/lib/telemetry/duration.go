@@ -40,17 +40,29 @@ func (d *Duration) Value() time.Duration {
 	return 0
 }
 
+func newDuration(hdl *handle, path string, name *string, node *C.struct_d_tm_node_t) *Duration {
+	return &Duration{
+		statsMetric: statsMetric{
+			metricBase: metricBase{
+				handle: hdl,
+				path:   path,
+				name:   name,
+				node:   node,
+			},
+		},
+	}
+}
+
 func GetDuration(ctx context.Context, name string) (*Duration, error) {
 	hdl, err := getHandle(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Duration{
-		statsMetric: statsMetric{
-			metricBase: metricBase{
-				handle: hdl,
-			},
-		},
-	}, nil
+	node, err := findNode(hdl, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return newDuration(hdl, "", &name, node), nil
 }

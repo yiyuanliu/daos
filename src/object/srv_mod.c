@@ -94,7 +94,7 @@ obj_tls_init(int xs_id, int tgt_id)
 	/** register different per-opcode sensors */
 	for (opc = 0; opc < OBJ_PROTO_CLI_COUNT; opc++) {
 		/** Start with latency, of type gauge */
-		D_ASPRINTF(path, "io/%u/ops/%s/latency_us", tgt_id,
+		D_ASPRINTF(path, "io/%u/ops/%s/latency", tgt_id,
 			   obj_opc_to_str(opc));
 		rc = d_tm_add_metric(&tls->ot_op_lat[opc], path, D_TM_GAUGE,
 				     "object RPC processing time", "");
@@ -104,7 +104,7 @@ obj_tls_init(int xs_id, int tgt_id)
 		D_FREE(path);
 
 		/** Continue with number of active requests, of type gauge */
-		D_ASPRINTF(path, "io/%u/ops/%s/active_cnt", tgt_id,
+		D_ASPRINTF(path, "io/%u/ops/%s/active", tgt_id,
 			   obj_opc_to_str(opc));
 		rc = d_tm_add_metric(&tls->ot_op_active[opc], path, D_TM_GAUGE,
 				     "number of active object RPCs", "");
@@ -114,7 +114,7 @@ obj_tls_init(int xs_id, int tgt_id)
 		D_FREE(path);
 
 		/** And finally the total number of requests, of type counter */
-		D_ASPRINTF(path, "io/%u/ops/%s/total_cnt", tgt_id,
+		D_ASPRINTF(path, "io/%u/ops/%s/total", tgt_id,
 			   obj_opc_to_str(opc));
 		rc = d_tm_add_metric(&tls->ot_op_total[opc], path, D_TM_COUNTER,
 				     "total number of processed object RPCs",
@@ -126,7 +126,7 @@ obj_tls_init(int xs_id, int tgt_id)
 	}
 
 	/** Total number of silently restarted updates, of type counter */
-	D_ASPRINTF(path, "io/%u/ops/%s/restarted_cnt", tgt_id,
+	D_ASPRINTF(path, "io/%u/ops/%s/restarted_total", tgt_id,
 		   obj_opc_to_str(DAOS_OBJ_RPC_UPDATE));
 	rc = d_tm_add_metric(&tls->ot_update_restart, path, D_TM_COUNTER,
 			     "total number of restarted update ops", "");
@@ -136,7 +136,7 @@ obj_tls_init(int xs_id, int tgt_id)
 	D_FREE(path);
 
 	/** Total number of resent updates, of type counter */
-	D_ASPRINTF(path, "io/%u/ops/%s/resent_cnt", tgt_id,
+	D_ASPRINTF(path, "io/%u/ops/%s/resent_total", tgt_id,
 		   obj_opc_to_str(DAOS_OBJ_RPC_UPDATE));
 	rc = d_tm_add_metric(&tls->ot_update_resent, path, D_TM_COUNTER,
 			     "total number of resent update RPCs", "");
