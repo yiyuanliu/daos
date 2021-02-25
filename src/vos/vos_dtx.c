@@ -288,14 +288,11 @@ dtx_act_ent_update(struct btr_instance *tins, struct btr_record *rec,
 	struct vos_dtx_act_ent	*dae_old;
 
 	dae_old = umem_off2ptr(&tins->ti_umm, rec->rec_off);
-	if (DAE_EPOCH(dae_old) != DAE_EPOCH(dae_new)) {
-		D_ASSERTF(!dae_old->dae_prepared,
-			  "NOT allow to update act DTX entry for "DF_DTI
-			  " from epoch "DF_X64" to "DF_X64"\n",
-			  DP_DTI(&DAE_XID(dae_old)),
-			  DAE_EPOCH(dae_old), DAE_EPOCH(dae_new));
-		return -DER_INPROGRESS;
-	}
+	D_ASSERTF(DAE_EPOCH(dae_old) != DAE_EPOCH(dae_new),
+		  "NOT allow to update act DTX entry for "DF_DTI
+		  " from epoch "DF_X64" to "DF_X64"\n",
+		  DP_DTI(&DAE_XID(dae_old)),
+		  DAE_EPOCH(dae_old), DAE_EPOCH(dae_new));
 
 	return 0;
 }
@@ -1742,7 +1739,7 @@ vos_dtx_check(daos_handle_t coh, struct dtx_id *dti, daos_epoch_t *epoch,
 		if (dae->dae_prepared || !for_resent)
 			return DTX_ST_PREPARED;
 
-		return -DER_NONEXIST;
+		return -DER_INPROGRESS;
 	}
 
 	if (rc == -DER_NONEXIST) {
