@@ -154,32 +154,37 @@ class Test(avocadoTest):
     def skip_from_list(self):
         """Check if test is in skip list"""
         skip_list = ""
+        skip_file = os.path.join(os.sep, "scratch", "CI-skip-list")
         try:
-            skip_list = open("/scratch/CI-skip-list").read()
-        except Exception as excpt: # pylint: disable=broad-except
-            print("Unable to read skip list: ", excpt)
-            print("Trudging on without skipping known failing tests")
-            return
+            with open(skip_file, "r") as skip_handle:
+                skip_list = skip_handle.read()
+        except FileNotFoundError as error:
+            self.log.info("Unable to read skip list: %s", error)
+            self.log.info("Trudging on without skipping known failing tests")
+            skip_list = ""
 
         for item in skip_list.splitlines():
             vals = item.split('|')
-            skip_it, ticket = self._check_variant_skip(eval(vals[0])) # pylint: disable=eval-used
+            skip_it, ticket = self._check_variant_skip(literal_eval(vals[0]))
             if skip_it:
                 # test is on the skiplist
                 if len(vals) > 1:
                     # but there is a commit that fixes it
-                    commits = None
                     try:
-                        commits = open('/tmp/commit_list').read().splitlines()
-                    except Exception as excpt: # pylint: disable=broad-except
-                        print("Unable to read commit list: ", excpt)
-                        print("Trudging on without skipping known failing "
-                              "tests")
+                        commit_file = os.path.join(os.sep, "tmp", "commit_list")
+                        with open(commit_file, "r") as commit_handle:
+                            commits = commit_handle.read()
+                    except FileNotFoundError as error:
+                        self.log.info("Unable to read commit list: ", error)
+                        self.log.info(
+                            "Trudging on without skipping known failing tests")
+                        commits = None
                     if commits and vals[1] in commits:
                         # fix is in this code base
-                        print("On the skip list for ticket {}, but is "
-                              "fixed in {} so not "
-                              "skipping".format(ticket, vals[1]))
+                        self.log.info(
+                            "This test variant is included in the skip "
+                            "list for ticket %s, but is fixed in %s. Test "
+                            "will not be skipped", ticket, vals[1])
                     else:
                         # fix is not in this code base
                         self.cancel("Skipping due to being on the "
@@ -189,23 +194,26 @@ class Test(avocadoTest):
                                                            vals[1]))
                 else:
                     try:
-                        if open("/tmp/commit_title").read().strip().startswith(
-                            ticket + " "):
-                            # fix is in this PR
-                            print("On the skip list for ticket {}, but "
-                                  "is being fixed in this PR, so not "
-                                  "skipping".format(ticket))
+                        commit_file = os.path.join(os.sep, "tmp", "commit_title")
+                        with open(commit_file, "r") as commit_handle:
+                            commit = commit_handle.read()
+                    except FileNotFoundError as error:
+                        self.log.info("Unable to read commit title: ", error)
+                        self.log.info(
+                            "Trudging on without skipping known failing tests")
+                        commit = None
+                        
+                    if commit and commit.strip().startswith(ticket + " "):
+                        # This skipped test is fixed in this PR
+                        self.log.info(
+                            "This test variant is included in the skip list for ticket "
+                            "%s, but it is being fixed in this PR.  Test will not be "
+                            "skipped", ticket)
                         else:
-                            # there is no commit that fixes it
-                            self.cancel("Skipping due to being on the skip list "
-                                        "for ticket {} with no fix available "
-                                        "yet".format(ticket))
-                    except exceptions.TestCancel():
-                        raise
-                    except Exception as excpt: # pylint: disable=broad-except
-                        print("Unable to read commit title: ", excpt)
-                        print("Trudging on without skipping known failing"
-                               "tests")
+                            # There is no commit that fixes the skipped test
+                            self.cancel(
+                                "This test variant is included in the skip list for "
+                                "ticket {} with no fix yet available.".format(ticket))
 
     def _check_variant_skip(self, cancel_list):
         """Determine if this test variant should be skipped.
