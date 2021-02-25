@@ -106,7 +106,7 @@ func (cmd *telemConfigCmd) fetchAsset(repo, platform string) (*os.File, error) {
 		return nil, err
 	}
 
-	_, err = outFile.ReadFrom(resp.Body)
+	_, err = io.Copy(outFile, resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (cmd *telemConfigCmd) extractFile(rdr *tar.Reader, dest string, mode os.Fil
 		return errors.Wrapf(err, "failed to create %s", dest)
 	}
 	defer outFile.Close()
-	_, err = outFile.ReadFrom(rdr)
+	_, err = io.Copy(outFile, rdr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write tar contents to %s", dest)
 	}
