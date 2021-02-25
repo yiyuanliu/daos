@@ -890,11 +890,12 @@ pipeline {
                                                 ' --build-arg QUICKBUILD_DEPS="' +
                                                 quick_build_deps('centos7') + '"' +
                                                 ' --build-arg REPOS="' + pr_repos() + '"'
+			    args '--tmpfs /mnt/daos'
                         }
                     }
                     steps {
                         sconsBuild parallel_build: parallel_build(),
-                                   scons_args: "PREFIX=/opt/daos TARGET_TYPE=release",
+                                   scons_args: "PREFIX=/opt/daos TARGET_TYPE=release BUILD_ROOT=/mnt/daos",
                                    build_deps: "no"
                     }
                     post {
