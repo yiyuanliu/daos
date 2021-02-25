@@ -1184,6 +1184,15 @@ vos_space_hold(struct vos_pool *pool, uint64_t flags, daos_key_t *dkey,
 void
 vos_space_unhold(struct vos_pool *pool, daos_size_t *space_hld);
 
+static inline struct vos_pool_df *
+vos_pool_pop2df(PMEMobjpool *pop)
+{
+	TOID(struct vos_pool_df) pool_df;
+
+	pool_df = POBJ_ROOT(pop, struct vos_pool_df);
+	return D_RW(pool_df);
+}
+
 static inline bool
 vos_epc_punched(daos_epoch_t epc, uint16_t minor_epc,
 		const struct vos_punch_record *punch)

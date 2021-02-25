@@ -1672,6 +1672,7 @@ vos_reserve_scm(struct vos_container *cont, struct vos_rsrvd_scm *rsrvd_scm,
 
 	if (vos_cont2umm(cont)->umm_ops->mo_reserve != NULL) {
 		struct pobj_action *act;
+		struct vos_pool_df *pool_df;
 
 		D_ASSERT(rsrvd_scm != NULL);
 		D_ASSERT(rsrvd_scm->rs_actv_cnt > rsrvd_scm->rs_actv_at);
@@ -1681,6 +1682,14 @@ vos_reserve_scm(struct vos_container *cont, struct vos_rsrvd_scm *rsrvd_scm,
 		umoff = umem_reserve(vos_cont2umm(cont), act, size);
 		if (!UMOFF_IS_NULL(umoff))
 			rsrvd_scm->rs_actv_at++;
+
+		pool_df = vos_pool_pop2df(vos_cont2umm(cont)->umm_pool);
+		D_DEBUG(DB_MGMT, "sz="DF_U64", umoff="DF_U64", Pool DF, size: "
+			DF_U64":"DF_U64", UUID: "DF_UUID"\n",
+			size, umoff, pool_df->pd_scm_sz, pool_df->pd_nvme_sz,
+			DP_UUID(pool_df->pd_id));
+		D_ASSERTF((umoff <= pool_df->pd_scm_sz), "umoff="DF_U64
+			  ", scm_sz="DF_U64"\n", umoff, pool_df->pd_scm_sz);
 	} else {
 		umoff = umem_alloc(vos_cont2umm(cont), size);
 	}

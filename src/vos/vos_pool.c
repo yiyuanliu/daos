@@ -61,6 +61,7 @@ vos_pmemobj_close(PMEMobjpool *pop)
 	D_MUTEX_UNLOCK(&vos_pmemobj_lock);
 }
 
+#if 0
 static inline struct vos_pool_df *
 vos_pool_pop2df(PMEMobjpool *pop)
 {
@@ -69,6 +70,7 @@ vos_pool_pop2df(PMEMobjpool *pop)
 	pool_df = POBJ_ROOT(pop, struct vos_pool_df);
 	return D_RW(pool_df);
 }
+#endif
 
 static int
 umem_get_type(void)
@@ -321,6 +323,9 @@ vos_pool_create(const char *path, uuid_t uuid, daos_size_t scm_sz,
 		pool_df->pd_version = 0;
 	else
 		pool_df->pd_version = POOL_DF_VERSION;
+	D_DEBUG(DB_MGMT, "Pool DF, size: "DF_U64":"DF_U64", "
+		"UUID: "DF_UUID"\n", pool_df->pd_scm_sz, pool_df->pd_nvme_sz,
+		DP_UUID(pool_df->pd_id));
 
 	gc_init_pool(&umem, pool_df);
 end:
