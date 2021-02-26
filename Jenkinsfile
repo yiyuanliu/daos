@@ -1307,7 +1307,7 @@ pipeline {
                     }
                     steps {
                         functionalTest inst_repos: daos_repos(),
-                                       target: 'opensuse15.2_test',
+                                       target: 'leap15.2_test',
                                        inst_rpms: functional_packages(),
                                        test_function: 'runTestFunctionalV2'
                     }
