@@ -234,7 +234,7 @@ String hw_distro(String size) {
     //'centos7
     return cachedCommitPragma(pragma: 'Func-hw-test-' + size + '-distro',
                               def_val: cachedCommitPragma(pragma: 'Func-hw-test-distro',
-                                                          def_val: 'centos7'))
+                                                          def_val: 'el7.9_test'))
 }
 
 String functional_packages() {
@@ -1287,6 +1287,7 @@ pipeline {
                     }
                     steps {
                         functionalTest inst_repos: daos_repos(),
+                                       target: 'el7.9_test',
                                        inst_rpms: functional_packages(),
                                        test_function: 'runTestFunctionalV2'
                     }
@@ -1306,6 +1307,7 @@ pipeline {
                     }
                     steps {
                         functionalTest inst_repos: daos_repos(),
+                                       target: 'opensuse15.2_test',
                                        inst_rpms: functional_packages(),
                                        test_function: 'runTestFunctionalV2'
                     }
