@@ -93,7 +93,7 @@ String pr_repos() {
 
 String pr_repos(String distro) {
     String repos = ""
-    if (distro == 'centos7') {
+    if (distro.startsWith('el7') || distro.startsWith('centos7')) {
         repos = cachedCommitPragma(pragma: 'PR-repos-el7')
     } else if (distro == 'leap15') {
         repos = cachedCommitPragma(pragma: 'PR-repos-leap15')
