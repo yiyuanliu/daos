@@ -22,10 +22,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/daos-stack/daos/src/control/common"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/daos-stack/daos/src/control/common"
+	"github.com/daos-stack/daos/src/control/lib/hostlist"
 )
 
 type telemCmd struct {
@@ -259,8 +261,12 @@ func (cmd *telemConfigCmd) configurePrometheus() (*installInfo, error) {
 		return nil, err
 	}
 
+	hs, err := hostlist.CreateSet(strings.Join(cmd.config.HostList, ","))
+	if err != nil {
+		return nil, errors.Wrapf(err, "invalid hostlist %+v", cmd.config.HostList)
+	}
 	sc := &staticConfig{}
-	for _, h := range cmd.config.HostList {
+	for _, h := range hs.Slice() {
 		host, _, err := common.SplitPort(h, 0)
 		if err != nil {
 			return nil, err
