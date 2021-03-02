@@ -4,6 +4,9 @@ REPOS_DIR=/etc/dnf.repos.d
 DISTRO_NAME=leap15
 LSB_RELEASE=lsb-release
 EXCLUDE_UPGRADE=fuse,fuse-libs,fuse-devel,mercury,daos,daos-\*
+DNF_REPO_ARGS="--disablerepo=*"
+DNF_REPO_ARGS+=" --enablerepo=daos-stack-*"
+
 
 bootstrap_dnf() {
     time zypper --non-interactive install dnf
@@ -46,8 +49,6 @@ post_provision_config_nodes() {
                      slurm-example-configs slurmctld slurm-slurmmd
     fi
 
-    local dnf_repo_args="--disablerepo=*"
-
     # these are in the base image now.  but how to detect that so that this is
     # backward compatible?
     #add_repo "$DAOS_STACK_GROUP_REPO"
@@ -55,9 +56,6 @@ post_provision_config_nodes() {
     #
     #add_repo "${DAOS_STACK_LOCAL_REPO}" false
     time dnf repolist
-
-    # TODO: this should be per repo for the above two repos
-    dnf_repo_args+=" --enablerepo=repo.dc.hpdd.intel.com_repository_*"
 
     if [ -n "$INST_REPOS" ]; then
         local repo
@@ -77,7 +75,7 @@ post_provision_config_nodes() {
             disable_gpg_check "$repo_url"
             # TODO: this should be per repo in the above loop
             if [ -n "$INST_REPOS" ]; then
-                dnf_repo_args+=",build.hpdd.intel.com_job_daos-stack*"
+                DNF_REPO_ARGS+=",build.hpdd.intel.com_job_daos-stack*"
             fi
         done
     fi
@@ -90,7 +88,7 @@ post_provision_config_nodes() {
     time dnf -y install $LSB_RELEASE
     # shellcheck disable=SC2086
     if [ -n "$INST_RPMS" ] &&
-       ! time dnf -y $dnf_repo_args install $INST_RPMS; then
+       ! time dnf -y $DNF_REPO_ARGS install $INST_RPMS; then
         rc=${PIPESTATUS[0]}
         dump_repos
         exit "$rc"
