@@ -2816,6 +2816,7 @@ out:
 	D_DEBUG(DF_DSMS, DF_UUID": replying rpc %p: "DF_RC"\n",
 		DP_UUID(in->pqi_op.pi_uuid), rpc, DP_RC(rc));
 	crt_reply_send(rpc);
+	daos_prop_free(prop);
 }
 
 /* Convert pool_comp_state_t to daos_target_state_t */
@@ -4585,6 +4586,7 @@ out:
 		DP_UUID(in->pti_op.pi_uuid), rpc, DP_RC(rc));
 	crt_reply_send(rpc);
 	pool_target_addr_list_free(&inval_list_out);
+	pool_target_addr_list_free(&list);
 }
 
 int

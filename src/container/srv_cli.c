@@ -103,8 +103,7 @@ dsc_cont_open(daos_handle_t poh, uuid_t cont_uuid, uuid_t coh_uuid,
 		D_GOTO(out, rc = -DER_NOMEM);
 
 	/** destroyed in dsc_cont_close */
-	rc = dsc_cont_csummer_init(&cont->dc_csummer, pool->dp_pool,
-				   cont_uuid);
+	rc = dsc_cont_csummer_init(&cont->dc_csummer, pool->dp_pool, cont_uuid);
 	if (rc != 0) {
 		dc_cont_free(cont);
 		cont = NULL;
@@ -119,8 +118,9 @@ dsc_cont_open(daos_handle_t poh, uuid_t cont_uuid, uuid_t coh_uuid,
 	cont->dc_pool_hdl = poh;
 	D_RWLOCK_UNLOCK(&pool->dp_co_list_lock);
 
-	dc_cont_hdl_link(cont);
-	dc_cont2hdl(cont, coh);
+	dc_cont_hdl_link(cont); /* +1 ref */
+	dc_cont2hdl(cont, coh); /* +1 ref */
+
 out:
 	if (cont != NULL)
 		dc_cont_put(cont);

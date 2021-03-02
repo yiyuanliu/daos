@@ -892,6 +892,7 @@ dc_array_close(tse_task_t *task)
 	if (rc != 0) {
 		D_ERROR("Failed to register completion cb "DF_RC"\n",
 			DP_RC(rc));
+		array_decref(array);
 		D_GOTO(err_put2, rc);
 	}
 
@@ -1297,7 +1298,7 @@ check_short_read_cb(tse_task_t *task, void *data)
 
 	if (rc != 0) {
 		D_ERROR("Array Read Failed "DF_RC"\n", DP_RC(rc));
-		return rc;
+		D_GOTO(err_params, rc);
 	}
 
 	D_ASSERT(params);
@@ -1383,11 +1384,8 @@ next:
 		params->array_size = UINT64_MAX;
 		rc = process_iomap(params, args);
 		if (rc)
-			return rc;
-
-		tse_task_complete(task, 0);
-		D_FREE(params);
-		return 0;
+			D_GOTO(err_params, rc);
+		D_GOTO(err_params, rc = 0);
 	}
 
 	/** Schedule the get size to properly check for short reads */
