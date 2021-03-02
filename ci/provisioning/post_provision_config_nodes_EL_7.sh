@@ -76,10 +76,13 @@ post_provision_config_nodes() {
 
     local dnf_repo_args="--disablerepo=*"
 
-    add_repo "$DAOS_STACK_GROUP_REPO"
-    group_repo_post
-
-    add_repo "${DAOS_STACK_LOCAL_REPO}" false
+    # these are in the base image now.  but how to detect that so that this is
+    # backward compatible?
+    #add_repo "$DAOS_STACK_GROUP_REPO"
+    #group_repo_post
+    #
+    #add_repo "${DAOS_STACK_LOCAL_REPO}" false
+    time dnf repolist
 
     # TODO: this should be per repo for the above two repos
     dnf_repo_args+=" --enablerepo=repo.dc.hpdd.intel.com_repository_*"
