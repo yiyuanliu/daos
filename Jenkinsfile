@@ -69,8 +69,7 @@ def functional_post_always() {
 }
 
 String get_daos_packages() {
-    Map stage_info = parseStageInfo()
-    return get_daos_packages(stage_info['target'])
+    return get_daos_packages(parseStageInfo()['target'])
 }
 
 String get_daos_packages(String distro) {
@@ -87,8 +86,7 @@ String get_daos_packages(String distro) {
 }
 
 String pr_repos() {
-    Map stage_info = parseStageInfo()
-    return pr_repos(stage_info['target'])
+    return pr_repos(parseStageInfo()['target'])
 }
 
 String pr_repos(String distro) {
@@ -125,8 +123,7 @@ String hw_distro_target() {
             return hw_distro('large')
         }
     }
-    Map stage_info = parseStageInfo()
-    return stage_info['target']
+    return parseStageInfo()['target']
 }
 
 String daos_repos() {
@@ -185,8 +182,7 @@ def cachedCommitPragma(Map config) {
 }
 
 String daos_packages_version() {
-    Map stage_info = parseStageInfo()
-    return daos_packages_version(stage_info['target'])
+    return daos_packages_version(parseStageInfo()['target'])
 }
 
 String daos_packages_version(String distro) {
