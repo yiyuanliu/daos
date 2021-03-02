@@ -185,7 +185,7 @@ def cachedCommitPragma(Map config) {
 }
 
 String daos_packages_version() {
-    stage_info = parseStageInfo()
+    Map stage_info = parseStageInfo()
     return daos_packages_version(stage_info['target'])
 }
 
@@ -264,7 +264,7 @@ String functional_packages(String distro) {
     } else if (distro.startsWith('ubuntu20')) {
         return daos_pkgs + " openmpi-bin ndctl fio"
     } else {
-        error 'functional_packages not implemented for ' + stage_info['target']
+        error 'functional_packages not implemented for ' + distro 
     }
 }
 
