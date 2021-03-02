@@ -141,7 +141,8 @@ String unit_packages() {
     if (env.STAGE_NAME.contains('Bullseye')) {
         need_qb = true
     }
-    if (stage_info['target'] == 'centos7') {
+    if (stage_info['target'].startsWith('el7') ||
+        stage_info['target'].startsWith('centos7')) {
         String packages =  'gotestsum openmpi3 ' +
                            'hwloc-devel argobots ' +
                            'fuse3-libs fuse3 ' +
@@ -193,7 +194,7 @@ String daos_packages_version(String distro) {
         String dist = ""
         if (version.indexOf('-') > -1) {
             // only tack on the %{dist} if the release was specified
-            if (distro == "centos7") {
+            if (distro.startsWith('el7') || distro.startsWith('centos7')) {
                 dist = ".el7"
             } else if (distro == "leap15") {
                 dist = ".suse.lp152"
@@ -254,7 +255,7 @@ String functional_packages(String distro) {
                   "mpifileutils-mpich-daos-1 "
     if (distro == "leap15") {
         return daos_pkgs + pkgs
-    } else if (distro == "centos7") {
+    } else if (distro.startsWith('el7') || distro.startsWith('centos7')) {
         // need to exclude openmpi until we remove it from the repo
         return  "--exclude openmpi " + daos_pkgs + pkgs
     } else if (distro.startsWith('ubuntu20')) {
@@ -489,7 +490,7 @@ String quick_build_deps(String distro, always=false) {
         rpmspec_args = "--define dist\\ .suse.lp152 " +
                        "--undefine rhel " +
                        "--define suse_version\\ 1502"
-    } else if (distro == "centos7") {
+    } else if (distro.startsWith('el7') || distro.startsWith('centos7')) {
         rpmspec_args = "--undefine suse_version " +
                        "--define rhel\\ 7"
     } else {
