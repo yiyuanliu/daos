@@ -914,6 +914,8 @@ def run_tests(test_files, tag_filter, args):
                     avocado_logs_dir, test_file, args)
                 return_code |= archive_cart_logs(
                     avocado_logs_dir, test_file, args)
+                return_code |= archive_cov_logs(
+                    avocado_logs_dir, test_file, args)
 
                 # Compress any log file that haven't been remotely compressed.
                 compress_log_files(avocado_logs_dir, args)
@@ -1075,6 +1077,35 @@ def archive_daos_logs(avocado_logs_dir, test_files, args):
             status |= 32
     return status
 
+def archive_cov_logs(avocado_logs_dir, test_files, args):
+    """Archive daos cov files to the avocado results directory.
+
+    Args:
+        avocado_logs_dir (str): path to the avocado log files
+        test_files (dict): a list of dictionaries of each test script/yaml file
+        args (argparse.Namespace): command line arguments for this program
+
+    Returns:
+        int: status code.
+
+    """
+    # Create a subdirectory in the avocado logs directory for this test
+    destination = os.path.join(avocado_logs_dir, "latest", "daos_covs")
+
+    # Copy any DAOS logs created on any host under test
+    hosts = get_hosts_from_yaml(test_files["yaml"], args)
+    print("Archiving host logs from {} in {}".format(hosts, destination))
+
+    # Copy any log files written to the DAOS_TEST_LOG_DIR directory
+    logs_dir = os.environ.get("DAOS_TEST_LOG_DIR", DEFAULT_DAOS_TEST_LOG_DIR)
+    task = archive_files(
+        destination, hosts, "/var/tmp/test.cov", False, args)
+
+    # Determine if the command completed successfully across all the hosts
+    status = 0
+    if not check_remote_output(task, "archive_daos_covs command"):
+        status |= 16
+    return status
 
 def archive_cart_logs(avocado_logs_dir, test_files, args):
     """Archive cart log files to the avocado results directory.
