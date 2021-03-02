@@ -93,7 +93,7 @@ String pr_repos(String distro) {
     String repos = ""
     if (distro.startsWith('el7') || distro.startsWith('centos7')) {
         repos = cachedCommitPragma(pragma: 'PR-repos-el7')
-    } else if (distro == 'leap15') {
+    } else if (distro.startsWith('leap15')) {
         repos = cachedCommitPragma(pragma: 'PR-repos-leap15')
     } else if (distro.startsWith('ubuntu20')) {
         repos = cachedCommitPragma(pragma: 'PR-repos-ubuntu20', cache: commit_pragma_cache)
@@ -196,7 +196,7 @@ String daos_packages_version(String distro) {
             // only tack on the %{dist} if the release was specified
             if (distro.startsWith('el7') || distro.startsWith('centos7')) {
                 dist = ".el7"
-            } else if (distro == "leap15") {
+            } else if (distro.startsWith('leap15')) {
                 dist = ".suse.lp152"
             }
         }
@@ -253,7 +253,7 @@ String functional_packages(String distro) {
                   "MACSio-mpich " +
                   "MACSio-openmpi3 " +
                   "mpifileutils-mpich-daos-1 "
-    if (distro == "leap15") {
+    if (distro.startsWith('leap15')) {
         return daos_pkgs + pkgs
     } else if (distro.startsWith('el7') || distro.startsWith('centos7')) {
         // need to exclude openmpi until we remove it from the repo
@@ -486,7 +486,7 @@ String quick_build_deps(String distro, always=false) {
             return ""
         }
     }
-    if (distro == "leap15") {
+    if (distro.startsWith('leap15')) {
         rpmspec_args = "--define dist\\ .suse.lp152 " +
                        "--undefine rhel " +
                        "--define suse_version\\ 1502"
