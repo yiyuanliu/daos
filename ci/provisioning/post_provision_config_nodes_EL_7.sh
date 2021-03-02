@@ -3,6 +3,7 @@
 REPOS_DIR=/etc/yum.repos.d
 DISTRO_NAME=centos7
 LSB_RELEASE=redhat-lsb-core
+EXCLUDE_UPGRADE=fuse,mercury,daos,daos-\*
 
 timeout_yum() {
     local timeout="$1"
@@ -34,6 +35,27 @@ bootstrap_dnf() {
 group_repo_post() {
     # nothing for EL7
     :
+}
+
+distro_custom() {
+    if [ ! -e /usr/bin/pip3 ] &&
+       [ -e /usr/bin/pip3.6 ]; then
+        ln -s pip3.6 /usr/bin/pip3
+    fi
+    if [ ! -e /usr/bin/python3 ] &&
+       [ -e /usr/bin/python3.6 ]; then
+        ln -s python3.6 /usr/bin/python3
+    fi
+    # install the debuginfo repo in case we get segfaults
+    cat <<"EOF" > $REPOS_DIR/CentOS-Debuginfo.repo
+[core-0-debuginfo]
+name=CentOS-7 - Debuginfo
+baseurl=http://debuginfo.centos.org/7/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-Debug-7
+enabled=0
+EOF
+
 }
 
 post_provision_config_nodes() {
@@ -86,11 +108,11 @@ post_provision_config_nodes() {
     fi
     if [ -n "$INST_RPMS" ]; then
         # shellcheck disable=SC2086
-        dnf -y erase $INST_RPMS
+        time dnf -y erase $INST_RPMS
     fi
     rm -f /etc/profile.d/openmpi.sh
     rm -f /tmp/daos_control.log
-    dnf -y install $LSB_RELEASE
+    time dnf -y install $LSB_RELEASE
     # shellcheck disable=SC2086
     if [ -n "$INST_RPMS" ] &&
        ! time dnf -y $dnf_repo_args install $INST_RPMS; then
@@ -98,27 +120,12 @@ post_provision_config_nodes() {
         dump_repos
         exit "$rc"
     fi
-    if [ ! -e /usr/bin/pip3 ] &&
-       [ -e /usr/bin/pip3.6 ]; then
-        ln -s pip3.6 /usr/bin/pip3
-    fi
-    if [ ! -e /usr/bin/python3 ] &&
-       [ -e /usr/bin/python3.6 ]; then
-        ln -s python3.6 /usr/bin/python3
-    fi
-    # install the debuginfo repo in case we get segfaults
-    cat <<"EOF" > $REPOS_DIR/CentOS-Debuginfo.repo
-[core-0-debuginfo]
-name=CentOS-7 - Debuginfo
-baseurl=http://debuginfo.centos.org/7/$basearch/
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-Debug-7
-enabled=0
-EOF
+
+    distro_custom
 
     # now make sure everything is fully up-to-date
     if ! time dnf -y upgrade \
-                  --exclude fuse,mercury,daos,daos-\*; then
+                  --exclude "$EXCLUDE_UPGRADE"; then
         dump_repos
         exit 1
     fi

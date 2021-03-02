@@ -38,7 +38,7 @@ post_provision_config_nodes() {
 
     if $CONFIG_POWER_ONLY; then
         rm -f $REPOS_DIR/*.hpdd.intel.com_job_daos-stack_job_*_job_*.repo
-        dnf -y erase fio fuse ior-hpc mpich-autoload               \
+        time dnf -y erase fio fuse ior-hpc mpich-autoload               \
                      ompi argobots cart daos daos-client dpdk      \
                      fuse-libs libisa-l libpmemobj mercury mpich   \
                      openpa pmix protobuf-c spdk libfabric libpmem \
@@ -80,15 +80,14 @@ post_provision_config_nodes() {
     fi
     if [ -n "$INST_RPMS" ]; then
         # shellcheck disable=SC2086
-        dnf -y erase $INST_RPMS
+        time dnf -y erase $INST_RPMS
     fi
     rm -f /etc/profile.d/openmpi.sh
     rm -f /tmp/daos_control.log
-    dnf -y install $LSB_RELEASE
-
+    time dnf -y install $LSB_RELEASE
     # shellcheck disable=SC2086
     if [ -n "$INST_RPMS" ] &&
-       ! dnf -y $dnf_repo_args install $INST_RPMS; then
+       ! time dnf -y $dnf_repo_args install $INST_RPMS; then
         rc=${PIPESTATUS[0]}
         dump_repos
         exit "$rc"
